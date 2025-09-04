@@ -1,21 +1,18 @@
-// secure-store.js
+// secure-store.js - File-based encryption without keytar
 const crypto = require("crypto");
 const os = require("os");
 const path = require("path");
 const fs = require("fs").promises;
-const keytar = require("keytar");
 
 const SERVICE = "UberWeeklyReporter";
-const ACCOUNT = "aes-key";
 
-async function ensureKey() {
-  let hex = await keytar.getPassword(SERVICE, ACCOUNT);
-  if (!hex) {
-    const buf = crypto.randomBytes(32); // 256-bit
-    hex = buf.toString("hex");
-    await keytar.setPassword(SERVICE, ACCOUNT, hex);
-  }
-  return Buffer.from(hex, "hex");
+// Generate a consistent key based on machine info
+function generateMachineKey() {
+  const machineId = os.hostname() + os.platform() + os.arch();
+  return crypto
+    .createHash("sha256")
+    .update(machineId + SERVICE)
+    .digest();
 }
 
 function sessionPath() {
@@ -24,7 +21,7 @@ function sessionPath() {
 }
 
 async function encryptToFile(plaintextBuffer) {
-  const key = await ensureKey();
+  const key = generateMachineKey();
   const file = sessionPath();
   await fs.mkdir(path.dirname(file), { recursive: true });
 
@@ -38,9 +35,9 @@ async function encryptToFile(plaintextBuffer) {
 }
 
 async function decryptFromFile() {
-  const key = await ensureKey();
+  const key = generateMachineKey();
   const file = sessionPath();
-  const raw = await fs.readFile(file); // throws if missing
+  const raw = await fs.readFile(file);
   const iv = raw.subarray(0, 12);
   const tag = raw.subarray(12, 28);
   const enc = raw.subarray(28);

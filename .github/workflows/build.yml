@@ -21,14 +21,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Rebuild native dependencies
-        run: npm run rebuild
-
-      - name: Build Windows app
+      - name: Build Windows app (skip rebuild)
         run: npm run build-win
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
 
       - name: Upload Windows build
         uses: actions/upload-artifact@v4
         with:
           name: windows-build
-          path: dist/*.exe
+          path: dist/

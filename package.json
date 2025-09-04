@@ -10,7 +10,6 @@
     "dev": "cross-env DEBUG_RANGE=1 electron .",
     "debug": "DEBUG_RANGE=1 electron .",
     "postinstall": "electron-builder install-app-deps",
-    "rebuild": "electron-rebuild -f -w keytar",
     "pack": "electron-builder --dir",
     "dist": "electron-builder -mwl",
     "build": "electron-builder",
@@ -51,7 +50,6 @@
   "dependencies": {
     "date-fns": "^4.1.0",
     "exceljs": "^4.4.0",
-    "keytar": "^7.9.0",
     "playwright": "^1.55.0",
     "puppeteer": "^24.19.0"
   },
