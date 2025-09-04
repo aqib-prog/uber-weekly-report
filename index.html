@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Uber Weekly Reporter</title>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="script-src 'self' 'unsafe-inline'; object-src 'none'"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.classless.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css"
+    />
+
+    <style>
+      :root {
+        --ink: #0f172a;
+        --primary: #2a6ef2;
+        --ok: #10b981;
+        --warn: #f59e0b;
+        --error: #ef4444;
+      }
+      body {
+        background: #f8fafc;
+        color: var(--ink);
+      }
+      header {
+        padding: 0.75rem 0 0;
+      }
+      .app {
+        max-width: 1120px;
+        margin: 24px auto;
+      }
+      .icon {
+        font-size: 1.25rem;
+        margin-right: 0.5rem;
+        vertical-align: -2px;
+      }
+      .brand {
+        font-weight: 700;
+        font-size: 1.25rem;
+      }
+      .sub {
+        opacity: 0.7;
+      }
+      .card {
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 6px 22px rgba(15, 23, 42, 0.06);
+        padding: 18px 20px;
+        margin: 14px 0;
+      }
+      .pill {
+        display: inline-block;
+        padding: 0.25rem 0.6rem;
+        border-radius: 999px;
+        font-size: 0.8rem;
+      }
+      .pill.ok {
+        background: rgba(16, 185, 129, 0.12);
+        color: #0f8e68;
+      }
+      .pill.warn {
+        background: rgba(245, 158, 11, 0.12);
+        color: #8a5b06;
+      }
+      .pill.bad {
+        background: rgba(239, 68, 68, 0.12);
+        color: #b91c1c;
+      }
+      .btn {
+        background: var(--primary);
+        border: none;
+        color: #fff;
+        border-radius: 10px;
+        padding: 0.7rem 1rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .btn.secondary {
+        background: #e5e7eb;
+        color: #111827;
+      }
+      .btn.success {
+        background: var(--ok);
+        color: #fff;
+      }
+      .btn:disabled {
+        background: #d1d5db;
+        color: #6b7280;
+        cursor: not-allowed;
+      }
+      .muted {
+        opacity: 0.7;
+      }
+      .footer {
+        opacity: 0.75;
+        font-size: 0.9rem;
+        margin-top: 14px;
+      }
+      .hicon {
+        font-size: 1.5rem;
+        margin-right: 0.6rem;
+        position: relative;
+        top: 2px;
+      }
+      .actions {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .label-line {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        line-height: 1.2;
+      }
+      label input[type="checkbox"] {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #2a6ef2;
+        border-radius: 6px;
+        background: #ffffff;
+        display: inline-grid;
+        place-content: center;
+        margin: 0;
+        position: relative;
+        top: 1px;
+        cursor: pointer;
+      }
+      label input[type="checkbox"]::before {
+        content: "";
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        transform: scale(0);
+        transition: transform 120ms ease-in-out;
+        background: #2a6ef2;
+      }
+      label input[type="checkbox"]:checked::before {
+        transform: scale(1);
+      }
+      #connect-card .pill {
+        margin-top: 16px;
+        display: inline-block;
+      }
+      .step-info {
+        background: #f0f9ff;
+        border: 1px solid #bae6fd;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin: 12px 0;
+        font-size: 0.9rem;
+      }
+      .step-info.active {
+        background: #fef3c7;
+        border-color: #fcd34d;
+      }
+      .success-message {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin: 12px 0;
+        font-size: 0.9rem;
+        color: #166534;
+      }
+      .btn.success {
+        background: var(--ok);
+        color: #fff;
+      }
+
+      .btn.purple {
+        background: #8b5cf6;
+        color: #fff;
+      }
+      .btn:disabled {
+        background: #d1d5db;
+        color: #6b7280;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header>
+        <div class="brand">
+          <i class="ri-taxi-fill hicon"></i>Uber Weekly Reporter
+        </div>
+        <div class="sub">
+          Automated weekly earnings report generation for Uber drivers
+        </div>
+      </header>
+
+      <section class="card" id="connect-card">
+        <h3>
+          <i class="ri-login-circle-line hicon"></i>Connect Uber (one-time)
+        </h3>
+        <p class="muted">
+          Sign in via a real Uber window (username → OTP → password). Then click
+          Save Session.
+        </p>
+        <div class="actions">
+          <button class="btn" id="btnConnect">
+            <i class="ri-login-box-line icon"></i>Connect Uber
+          </button>
+          <button class="btn secondary" id="btnSave" disabled>
+            <i class="ri-shield-check-line icon"></i>Save Session
+          </button>
+        </div>
+        <span id="connectState" class="pill" style="display: none"></span>
+      </section>
+
+      <section class="card" id="run-card">
+        <h3>
+          <i class="ri-file-excel-2-line hicon"></i>Generate Weekly Excel Report
+        </h3>
+        <p class="muted">
+          Extract driver earnings data and generate Excel report
+        </p>
+
+        <div class="step-info">
+          <strong>How it works:</strong>
+          <ol>
+            <li>Click "Start Report Generation" below</li>
+            <li>Uber earnings page will open in a new browser window</li>
+            <li>
+              Manually set your desired date range in Uber (e.g., last 7 days)
+            </li>
+            <li>
+              Return here and click "Begin Automation" to start data extraction
+            </li>
+            <li>Excel file will be generated automatically</li>
+          </ol>
+        </div>
+
+        <div id="manualStep" class="step-info active" style="display: none">
+          <strong>Action Required:</strong> Please set your desired date range
+          in the Uber window that just opened, then click "Begin Automation"
+          below when ready.
+        </div>
+
+        <div id="successMessage" class="success-message" style="display: none">
+          <strong>Report Generated Successfully!</strong>
+          <div id="successDetails"></div>
+        </div>
+
+        <div class="actions">
+          <button class="btn" id="btnOpenUber" disabled>
+            <i class="ri-external-link-line icon"></i>Start Report Generation
+          </button>
+          <button
+            class="btn secondary"
+            id="btnStartAutomation"
+            disabled
+            style="display: none"
+          >
+            <i class="ri-play-line icon"></i>Begin Automation
+          </button>
+          <button
+            class="btn success"
+            id="btnDownload"
+            disabled
+            style="display: none"
+          >
+            <i class="ri-download-line icon"></i>Open File Location
+          </button>
+          <button
+            class="btn purple"
+            id="btnDownloadPdf"
+            disabled
+            style="display: none"
+          >
+            <i class="ri-file-pdf-line icon"></i>Download PDF
+          </button>
+        </div>
+
+        <div id="runMsg" class="footer"></div>
+      </section>
+
+      <!-- COMMENTED OUT: Scheduling feature for future release
+      <section class="card" id="schedule-card">
+        <h3><i class="ri-time-line hicon"></i>Schedule (Future Feature)</h3>
+        <label class="label-line">
+          <input type="checkbox" id="chkSched" disabled />
+          <span>Run every Monday 09:00</span>
+        </label>
+        <div class="muted" style="margin-top: 8px">
+          Scheduling feature will be added in a future update
+        </div>
+      </section>
+      -->
+
+      <div class="footer">Status: <span id="status">Ready</span></div>
+    </div>
+
+    <script>
+      const btnConnect = document.getElementById("btnConnect");
+      const btnSave = document.getElementById("btnSave");
+      const btnOpenUber = document.getElementById("btnOpenUber");
+      const btnStartAutomation = document.getElementById("btnStartAutomation");
+      const btnDownload = document.getElementById("btnDownload");
+      const connectState = document.getElementById("connectState");
+      const status = document.getElementById("status");
+      const manualStep = document.getElementById("manualStep");
+      const runMsg = document.getElementById("runMsg");
+      const successMessage = document.getElementById("successMessage");
+      const successDetails = document.getElementById("successDetails");
+      const btnDownloadPdf = document.getElementById("btnDownloadPdf");
+      let generatedPdfPath = null;
+
+      let generatedFilePath = null;
+
+      function markConnected(msg) {
+        connectState.style.display = "inline-block";
+        connectState.textContent = "Connected";
+        connectState.className = "pill ok";
+        btnOpenUber.disabled = false;
+        if (msg) status.textContent = msg;
+      }
+
+      btnConnect.onclick = async () => {
+        status.textContent = "Opening Uber login ...";
+        const ok = await window.api.openLogin();
+        if (ok) {
+          status.textContent =
+            "Login window opened. Complete username → OTP → password, then click Save Session.";
+          btnSave.disabled = false;
+        } else {
+          status.textContent =
+            "Could not open login window. See terminal for details.";
+        }
+      };
+
+      btnSave.onclick = async () => {
+        status.textContent = "Saving encrypted session...";
+        const res = await window.api.saveSession();
+        if (res && res.ok) {
+          markConnected(`Connected. Session saved at ${res.file}`);
+        } else {
+          status.textContent = (res && res.msg) || "Could not save session.";
+        }
+      };
+
+      btnOpenUber.onclick = async () => {
+        status.textContent = "Opening Uber earnings page...";
+        const res = await window.api.openUberForManualSetup();
+        if (res && res.ok) {
+          manualStep.style.display = "block";
+          btnStartAutomation.style.display = "inline-block";
+          btnStartAutomation.disabled = false;
+          status.textContent =
+            "Uber page opened. Please set your date range manually.";
+        } else {
+          status.textContent = (res && res.msg) || "Could not open Uber page.";
+        }
+      };
+
+      btnStartAutomation.onclick = async () => {
+        btnStartAutomation.disabled = true;
+        btnStartAutomation.textContent = "Processing...";
+        status.textContent = "Starting automated data extraction...";
+
+        const res = await window.api.runAutomation();
+
+        if (res && res.ok) {
+          generatedFilePath = res.file;
+
+          // Show success message
+          successMessage.style.display = "block";
+          successDetails.innerHTML = `
+            <div>📊 Drivers processed: ${res.driversProcessed}</div>
+            <div>📁 File location: ${res.file}</div>
+          `;
+
+          // Enable download button
+          btnDownload.style.display = "inline-block";
+          btnDownload.disabled = false;
+          btnDownloadPdf.style.display = "inline-block";
+          btnDownloadPdf.disabled = false;
+
+          // Generate PDF automatically
+          status.textContent = "Generating PDF version...";
+          const pdfRes = await window.api.generatePdf(generatedFilePath);
+          if (pdfRes && pdfRes.ok) {
+            generatedPdfPath = pdfRes.file;
+            status.textContent = `Report completed. Excel and PDF files ready.`;
+          } else {
+            status.textContent = `Excel ready. PDF generation failed.`;
+          }
+
+          runMsg.textContent = `Success! Excel file saved: ${res.file}`;
+          status.textContent = `Report completed. ${res.driversProcessed} drivers processed.`;
+          manualStep.style.display = "none";
+          btnStartAutomation.style.display = "none";
+        } else {
+          status.textContent = (res && res.msg) || "Automation failed.";
+        }
+
+        btnStartAutomation.disabled = false;
+        btnStartAutomation.textContent = "Begin Automation";
+      };
+
+      btnDownload.onclick = async () => {
+        if (!generatedFilePath) {
+          status.textContent = "No file available to download";
+          return;
+        }
+
+        status.textContent = "Opening file location...";
+        const res = await window.api.downloadFile(generatedFilePath);
+
+        if (res && res.ok) {
+          status.textContent = "File location opened in explorer";
+        } else {
+          status.textContent =
+            (res && res.msg) || "Could not open file location";
+        }
+      };
+      //pdf
+      btnDownloadPdf.onclick = async () => {
+        if (!generatedPdfPath) {
+          status.textContent = "No PDF file available";
+          return;
+        }
+
+        status.textContent = "Opening PDF file location...";
+        const res = await window.api.downloadFile(generatedPdfPath);
+
+        if (res && res.ok) {
+          status.textContent = "PDF file location opened";
+        } else {
+          status.textContent =
+            (res && res.msg) || "Could not open PDF location";
+        }
+      };
+
+      // Fast startup
+      (async () => {
+        const has = await window.api.hasSession();
+
+        if (!has) {
+          btnOpenUber.disabled = true;
+          status.textContent = "Please Connect Uber and Save Session to begin.";
+          return;
+        }
+
+        markConnected("Connected (checking session…)");
+
+        const res = await window.api.smokeEarnings();
+
+        if (!res || !res.ok) {
+          btnOpenUber.disabled = true;
+
+          connectState.style.display = "inline-block";
+          connectState.textContent = "Reconnect needed";
+          connectState.className = "pill bad";
+
+          if (res && res.reason === "expired") {
+            status.textContent =
+              "Session expired — click Connect Uber, sign in, then Save Session.";
+          } else {
+            status.textContent =
+              "Could not validate session: " +
+              ((res && res.msg) || "unknown error");
+          }
+        } else {
+          status.textContent = "Connected and ready to generate reports.";
+        }
+      })();
+    </script>
+  </body>
+</html>
