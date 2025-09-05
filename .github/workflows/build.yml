@@ -4,30 +4,47 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # Optional: run on tag push (e.g., v1.0.0)
+  # push:
+  #   tags:
+  #     - "v*"
 
 jobs:
   build-windows:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "20"
           cache: "npm"
 
       - name: Install dependencies
         run: npm ci
+        shell: pwsh
 
-      - name: Build Windows app (skip rebuild)
-        run: npm run build-win
-        env:
-          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+      # If your app uses Playwright, we bundle Chromium so it runs offline
+      - name: Preinstall Playwright Chromium
+        run: |
+          $env:PLAYWRIGHT_BROWSERS_PATH = '0'
+          npx playwright install chromium
+        shell: pwsh
 
+      # Build both NSIS installer and Portable exe (uses your "dist:win" script)
+      - name: Build Windows artifacts
+        run: npm run dist:win
+        shell: pwsh
+
+      # Upload the generated files from /dist
       - name: Upload Windows build
         uses: actions/upload-artifact@v4
         with:
           name: windows-build
-          path: dist/
+          path: |
+            dist/*.exe
+            dist/*.msi
+            dist/*.zip

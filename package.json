@@ -5,7 +5,6 @@
   "main": "main.js",
   "type": "commonjs",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "electron .",
     "dev": "cross-env DEBUG_RANGE=1 electron .",
     "debug": "DEBUG_RANGE=1 electron .",
@@ -14,7 +13,9 @@
     "dist": "electron-builder -mwl",
     "build": "electron-builder",
     "build-mac": "electron-builder --mac",
-    "build-win": "electron-builder --win"
+    "build-win": "electron-builder --win",
+    "prepare:pw": "cross-env PLAYWRIGHT_BROWSERS_PATH=0 npx playwright install chromium",
+    "dist:win": "electron-builder --win nsis portable"
   },
   "keywords": [],
   "author": "",
@@ -22,6 +23,7 @@
   "build": {
     "appId": "com.uberreporter.app",
     "productName": "Uber Weekly Reporter",
+    "asar": true,
     "directories": {
       "output": "dist"
     },
@@ -32,6 +34,22 @@
       "secure-store.js",
       "node_modules/**/*",
       "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/",
+        "to": "resources",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "node_modules/playwright/.local-browsers",
+        "to": "playwright-browsers",
+        "filter": [
+          "**/*"
+        ]
+      }
     ],
     "mac": {
       "target": {
@@ -44,7 +62,26 @@
       "category": "public.app-category.business"
     },
     "win": {
-      "target": "nsis"
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowElevation": false,
+      "shortcutName": "Uber Weekly Reporter"
     }
   },
   "dependencies": {
