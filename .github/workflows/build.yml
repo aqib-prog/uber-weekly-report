@@ -4,10 +4,6 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-  # Optional: run on tag push (e.g., v1.0.0)
-  # push:
-  #   tags:
-  #     - "v*"
 
 jobs:
   build-windows:
@@ -34,9 +30,9 @@ jobs:
           npx playwright install chromium
         shell: pwsh
 
-      # Build both NSIS installer and Portable exe (uses your "dist:win" script)
+      # Build NSIS installer + Portable .exe, and DO NOT publish (avoids GH_TOKEN requirement)
       - name: Build Windows artifacts
-        run: npm run dist:win
+        run: npx electron-builder --win nsis portable --publish never
         shell: pwsh
 
       # Upload the generated files from /dist
