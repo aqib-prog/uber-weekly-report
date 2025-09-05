@@ -558,7 +558,7 @@ ipcMain.handle("smoke-earnings", async () => {
 
     await page.goto(EARNINGS_URL, {
       waitUntil: "domcontentloaded",
-      timeout: 6000,
+      timeout: 15000,
     });
     if (/auth\.uber\.com/.test(page.url())) {
       await context.close();
