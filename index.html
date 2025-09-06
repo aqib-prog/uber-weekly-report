@@ -272,14 +272,14 @@
           >
             <i class="ri-download-line icon"></i>Open File Location
           </button>
-          <button
+          <!-- <button
             class="btn purple"
             id="btnDownloadPdf"
             disabled
             style="display: none"
           >
             <i class="ri-file-pdf-line icon"></i>Download PDF
-          </button>
+          </button> -->
         </div>
 
         <div id="runMsg" class="footer"></div>
@@ -313,8 +313,8 @@
       const runMsg = document.getElementById("runMsg");
       const successMessage = document.getElementById("successMessage");
       const successDetails = document.getElementById("successDetails");
-      const btnDownloadPdf = document.getElementById("btnDownloadPdf");
-      let generatedPdfPath = null;
+      //   const btnDownloadPdf = document.getElementById("btnDownloadPdf");
+    //   let generatedPdfPath = null;
 
       let generatedFilePath = null;
 
@@ -383,18 +383,18 @@
           // Enable download button
           btnDownload.style.display = "inline-block";
           btnDownload.disabled = false;
-          btnDownloadPdf.style.display = "inline-block";
-          btnDownloadPdf.disabled = false;
+          //   btnDownloadPdf.style.display = "inline-block";
+          //   btnDownloadPdf.disabled = false;
 
           // Generate PDF automatically
-          status.textContent = "Generating PDF version...";
-          const pdfRes = await window.api.generatePdf(generatedFilePath);
-          if (pdfRes && pdfRes.ok) {
-            generatedPdfPath = pdfRes.file;
-            status.textContent = `Report completed. Excel and PDF files ready.`;
-          } else {
-            status.textContent = `Excel ready. PDF generation failed.`;
-          }
+          //   status.textContent = "Generating PDF version...";
+          //   const pdfRes = await window.api.generatePdf(generatedFilePath);
+          //   if (pdfRes && pdfRes.ok) {
+          //     generatedPdfPath = pdfRes.file;
+          //     status.textContent = `Report completed. Excel and PDF files ready.`;
+          //   } else {
+          //     status.textContent = `Excel ready. PDF generation failed.`;
+          //   }
 
           runMsg.textContent = `Success! Excel file saved: ${res.file}`;
           status.textContent = `Report completed. ${res.driversProcessed} drivers processed.`;
@@ -425,22 +425,22 @@
         }
       };
       //pdf
-      btnDownloadPdf.onclick = async () => {
-        if (!generatedPdfPath) {
-          status.textContent = "No PDF file available";
-          return;
-        }
+      //   btnDownloadPdf.onclick = async () => {
+      //     if (!generatedPdfPath) {
+      //       status.textContent = "No PDF file available";
+      //       return;
+      //     }
 
-        status.textContent = "Opening PDF file location...";
-        const res = await window.api.downloadFile(generatedPdfPath);
+      //     status.textContent = "Opening PDF file location...";
+      //     const res = await window.api.downloadFile(generatedPdfPath);
 
-        if (res && res.ok) {
-          status.textContent = "PDF file location opened";
-        } else {
-          status.textContent =
-            (res && res.msg) || "Could not open PDF location";
-        }
-      };
+      //     if (res && res.ok) {
+      //       status.textContent = "PDF file location opened";
+      //     } else {
+      //       status.textContent =
+      //         (res && res.msg) || "Could not open PDF location";
+      //     }
+      //   };
 
       // Fast startup
       (async () => {

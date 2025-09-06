@@ -406,6 +406,10 @@ async function extractDriverDetails(page, driverName) {
     // Breakdown items under Total earnings:
     const fare = await readAedFromPanel(panel, /^Fare$/i);
     const serviceFee = await readAedFromPanel(panel, /^Service\s*Fee$/i);
+
+    // NEW: Other earnings field
+    const otherEarnings = await readAedFromPanel(panel, /^Other\s*earnings$/i);
+
     const taxes = await readAedFromPanel(panel, /^Taxes?$/i);
     const tips = await readAedFromPanel(panel, /^Tip$/i);
 
@@ -433,6 +437,7 @@ async function extractDriverDetails(page, driverName) {
       totalEarnings,
       fare,
       serviceFee,
+      otherEarnings, // NEW field
       taxes,
       tips,
       refundsExpenses,
@@ -447,6 +452,7 @@ async function extractDriverDetails(page, driverName) {
     console.log(`Total Earnings: AED ${totalEarnings}`);
     console.log(`Fare: AED ${fare}`);
     console.log(`Service Fee: AED ${serviceFee}`);
+    console.log(`Other Earnings: AED ${otherEarnings}`); // NEW log
     console.log(`Taxes: AED ${taxes}`);
     console.log(`Tips: AED ${tips}`);
     console.log(`Payout: AED ${payout}`);
@@ -461,6 +467,7 @@ async function extractDriverDetails(page, driverName) {
       totalEarnings: 0,
       fare: 0,
       serviceFee: 0,
+      otherEarnings: 0, // NEW field with default 0
       taxes: 0,
       tips: 0,
       refundsExpenses: 0,
@@ -472,7 +479,6 @@ async function extractDriverDetails(page, driverName) {
     };
   }
 }
-
 // ------------------------------------------
 // IPC handlers used by the renderer (UI)
 // ------------------------------------------
@@ -821,6 +827,12 @@ ipcMain.handle("run-automation", async () => {
         style: { numFmt: "#,##0.00" },
       },
       {
+        header: "Other Earnings", // NEW column
+        key: "otherEarnings",
+        width: 16,
+        style: { numFmt: "#,##0.00" },
+      },
+      {
         header: "Taxes",
         key: "taxes",
         width: 12,
@@ -932,14 +944,15 @@ ipcMain.handle("run-automation", async () => {
     totalsRow.getCell(2).value = sum(allDriverData, "totalEarnings");
     totalsRow.getCell(3).value = sum(allDriverData, "fare");
     totalsRow.getCell(4).value = sum(allDriverData, "serviceFee");
-    totalsRow.getCell(5).value = sum(allDriverData, "taxes");
-    totalsRow.getCell(6).value = sum(allDriverData, "tips");
-    totalsRow.getCell(7).value = sum(allDriverData, "refundsExpenses");
-    totalsRow.getCell(8).value = sum(allDriverData, "adjustments");
-    totalsRow.getCell(9).value = sum(allDriverData, "payout");
-    totalsRow.getCell(10).value = sum(allDriverData, "netEarnings");
-    totalsRow.getCell(11).value = sum(allDriverData, "trips");
-    totalsRow.getCell(12).value = sum(allDriverData, "distance");
+    totalsRow.getCell(5).value = sum(allDriverData, "otherEarnings");
+    totalsRow.getCell(6).value = sum(allDriverData, "taxes");
+    totalsRow.getCell(7).value = sum(allDriverData, "tips");
+    totalsRow.getCell(8).value = sum(allDriverData, "refundsExpenses");
+    totalsRow.getCell(9).value = sum(allDriverData, "adjustments");
+    totalsRow.getCell(10).value = sum(allDriverData, "payout");
+    totalsRow.getCell(11).value = sum(allDriverData, "netEarnings");
+    totalsRow.getCell(12).value = sum(allDriverData, "trips");
+    totalsRow.getCell(13).value = sum(allDriverData, "distance");
 
     totalsRow.font = { bold: true };
     totalsRow.fill = {
@@ -948,10 +961,10 @@ ipcMain.handle("run-automation", async () => {
       fgColor: { argb: "FFD3D3D3" },
     };
     // number formats
-    [2, 3, 4, 5, 6, 7, 8, 9, 10].forEach(
+    [2, 3, 4, 5, 6, 7, 8, 9, 10, 11].forEach(
       (c) => (totalsRow.getCell(c).numFmt = "#,##0.00")
     );
-    totalsRow.getCell(12).numFmt = "0.00";
+    totalsRow.getCell(13).numFmt = "0.00";
 
     // Use actual date range in filename instead of today's date
     let fileName;
@@ -963,7 +976,180 @@ ipcMain.handle("run-automation", async () => {
     }
     const filePath = path.join(app.getPath("desktop"), fileName);
 
-    await new ExcelJS.Workbook().xlsx; // ensure ExcelJS stays referenced
+    // Add summary table below main table
+    const summaryStartRow = ws.rowCount + 3;
+
+    // Summary table header with date range
+    const summaryHeaderRow = ws.getRow(summaryStartRow);
+    const summaryBannerText = selectedRange
+      ? `SUMMARY - ${selectedRange.displayText || selectedRange.long}`
+      : "SUMMARY - Range: (unknown)";
+
+    summaryHeaderRow.getCell(1).value = summaryBannerText;
+    ws.mergeCells(summaryStartRow, 1, summaryStartRow, 7);
+    summaryHeaderRow.font = { bold: true, size: 14 };
+    summaryHeaderRow.alignment = { horizontal: "center" };
+    summaryHeaderRow.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFECEEDF" },
+    };
+
+    // Add summary table column headers
+    const summaryColHeaderRow = ws.getRow(summaryStartRow + 1);
+    const summaryHeaders = [
+      "NAMES",
+      "TOTAL EARNINGS",
+      "REFUNDS/EXPENSES",
+      "ADJUSTMENTS",
+      "PAYOUT",
+      "NET EARNINGS",
+      "TOTAL TRIPS",
+      "TIPS",
+    ];
+
+    summaryHeaders.forEach((header, index) => {
+      const cell = summaryColHeaderRow.getCell(index + 1);
+      cell.value = header;
+      cell.font = { bold: true };
+      cell.alignment = { horizontal: "center", vertical: "middle" };
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFD9E2F3" }, // Light blue
+      };
+    });
+
+    // Set column widths for summary table
+    const summaryWidths = [25, 16, 18, 15, 15, 16, 12, 12];
+    for (let i = 0; i < summaryWidths.length; i++) {
+      // Only set width if it's larger than current width
+      const currentWidth = ws.getColumn(i + 1).width || 0;
+      if (summaryWidths[i] > currentWidth) {
+        ws.getColumn(i + 1).width = summaryWidths[i];
+      }
+    }
+
+    // Add summary data rows
+    allDriverData.forEach((driver, index) => {
+      const rowNum = summaryStartRow + 2 + index;
+      const row = ws.getRow(rowNum);
+
+      // Calculate values using the formulas we identified
+      const correctedTotalEarnings =
+        driver.fare +
+        driver.serviceFee +
+        driver.otherEarnings +
+        driver.taxes +
+        driver.tips;
+      const correctedNetEarnings =
+        correctedTotalEarnings +
+        driver.refundsExpenses +
+        driver.adjustments +
+        driver.payout;
+
+      // Set values
+      row.getCell(1).value = driver.name;
+      row.getCell(2).value = correctedTotalEarnings;
+      row.getCell(3).value = driver.refundsExpenses;
+      row.getCell(4).value = driver.adjustments;
+      row.getCell(5).value = driver.payout;
+      row.getCell(6).value = correctedNetEarnings;
+      row.getCell(7).value = driver.trips;
+      row.getCell(8).value = driver.tips;
+
+      // Apply number formatting
+      [2, 3, 4, 5, 6, 8].forEach((col) => {
+        row.getCell(col).numFmt = "#,##0.00";
+      });
+
+      // Highlight payout column in yellow
+      row.getCell(5).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "F8FAB4" }, // Yellow
+      };
+
+      // Alternate row colors
+      if (index % 2 === 1) {
+        [1, 2, 3, 4, 6, 7, 8].forEach((col) => {
+          // Skip payout column (5)
+          if (col !== 5) {
+            row.getCell(col).fill = {
+              type: "pattern",
+              pattern: "solid",
+              fgColor: { argb: "FFF8F8F8" }, // Light gray
+            };
+          }
+        });
+      }
+    });
+
+    // Add summary totals row
+    const summaryTotalsRowNum = summaryStartRow + 2 + allDriverData.length + 1;
+    const summaryTotalsRow = ws.getRow(summaryTotalsRowNum);
+
+    summaryTotalsRow.getCell(1).value = "TOTALS";
+    summaryTotalsRow.getCell(1).font = { bold: true };
+
+    // Calculate corrected totals using proper formulas
+    const totalCorrectedEarnings = allDriverData.reduce(
+      (sum, driver) =>
+        sum +
+        (driver.fare +
+          driver.serviceFee +
+          driver.otherEarnings +
+          driver.taxes +
+          driver.tips),
+      0
+    );
+    const totalCorrectedNet = allDriverData.reduce(
+      (sum, driver) =>
+        sum +
+        (driver.fare +
+          driver.serviceFee +
+          driver.otherEarnings +
+          driver.taxes +
+          driver.tips +
+          driver.refundsExpenses +
+          driver.adjustments +
+          driver.payout),
+      0
+    );
+
+    summaryTotalsRow.getCell(2).value = totalCorrectedEarnings;
+    summaryTotalsRow.getCell(3).value = sum(allDriverData, "refundsExpenses");
+    summaryTotalsRow.getCell(4).value = sum(allDriverData, "adjustments");
+    summaryTotalsRow.getCell(5).value = sum(allDriverData, "payout");
+    summaryTotalsRow.getCell(6).value = totalCorrectedNet;
+    summaryTotalsRow.getCell(7).value = sum(allDriverData, "trips");
+    summaryTotalsRow.getCell(8).value = sum(allDriverData, "tips");
+
+    // Format totals row
+    summaryTotalsRow.font = { bold: true };
+    summaryTotalsRow.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFD3D3D3" }, // Gray
+    };
+
+    [2, 3, 4, 5, 6, 8].forEach((col) => {
+      summaryTotalsRow.getCell(col).numFmt = "#,##0.00";
+    });
+
+    // Apply borders to all summary table cells
+    for (let row = summaryStartRow; row <= summaryTotalsRowNum; row++) {
+      for (let col = 1; col <= 8; col++) {
+        const cell = ws.getCell(row, col);
+        cell.border = {
+          top: { style: "thin" },
+          left: { style: "thin" },
+          bottom: { style: "thin" },
+          right: { style: "thin" },
+        };
+      }
+    }
+
     await wb.xlsx.writeFile(filePath);
     console.log(`📊 Excel file created: ${filePath}`);
 
@@ -1066,6 +1252,7 @@ ipcMain.handle("generate-pdf", async (_evt, excelFilePath) => {
       "Total Earnings",
       "Fare",
       "Service Fee",
+      "Other Earnings",
       "Taxes",
       "Tips",
       "Refunds & Expenses",
@@ -1100,7 +1287,7 @@ ipcMain.handle("generate-pdf", async (_evt, excelFilePath) => {
       // Process each column
       for (let colIndex = 1; colIndex <= headers.length; colIndex++) {
         const cell = row.getCell(colIndex);
-        const isPayout = colIndex === 9; // Payout is 9th column
+        const isPayout = colIndex === 10;
         const cellClass = isPayout && !isTotal ? "payout" : "";
 
         let value = cell.value;
